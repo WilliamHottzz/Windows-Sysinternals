@@ -57,7 +57,7 @@ namespace Morningstar.Core.Foundation.DotNetOperations
                             {
                                 if (method.Body.Instructions[i].OpCode == OpCodes.Ldstr)
                                 {
-                                    Strings.Add(type.Name + " | " + method.Name + " | " + method.Body.Instructions[i].ToString().Split(new string[] { "ldstr" }, StringSplitOptions.None)[1]);
+                                    Strings.Add(item: type.Name + " | " + method.Name + " | " + method.Body.Instructions[i].ToString().Split(new string[] { "ldstr" }, StringSplitOptions.None)[1]);
                                 }
                             }
                         }

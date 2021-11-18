@@ -16,14 +16,14 @@ namespace Morningstar.Core.Foundation.FileOperations
         /// Loads a specific user file.
         /// </summary>
         /// <returns>File path of selected file if true, null string if false</returns>
-        public Task<string> Load()
+        public async Task<string> Load()
         {
             string file = string.Empty;
 
             var openFileDialog = new OpenFileDialog()
             {
                 InitialDirectory = Environment.CurrentDirectory,
-                Title = "Open File",
+                Title = FileOperationConstants.OpenFileDialogFormText,
                 Filter = FileOperationConstants.FileTypeFilter,
                 FilterIndex = 2,
                 RestoreDirectory = true
@@ -34,7 +34,8 @@ namespace Morningstar.Core.Foundation.FileOperations
                 file = openFileDialog.FileName;
             }
 
-            return Task.Run(() => file);
+            await Task.Delay(1);
+            return file;
         }
     }
 }

@@ -43,7 +43,7 @@ namespace Morningstar.Core.Foundation.FileOperations
             foreach (FileSystemAccessRule rule in rules)
             {                             
                 if (rule.AccessControlType == AccessControlType.Allow && rule.IdentityReference.Value == referenceValue)
-                {                    
+                {                                 
                     if (rule.FileSystemRights.HasFlag(FileSystemRights.Write)) { this.SecurityAttributes.Add("Write"); }
                     if (rule.FileSystemRights.HasFlag(FileSystemRights.WriteAttributes)) { this.SecurityAttributes.Add("WriteAttributes"); }
                     if (rule.FileSystemRights.HasFlag(FileSystemRights.WriteExtendedAttributes)) { this.SecurityAttributes.Add("WriteExtendedAttributes"); }                    
@@ -79,7 +79,7 @@ namespace Morningstar.Core.Foundation.FileOperations
         public override bool RemoveRule(string file, string account, FileSystemRights right)
         {
             
-            FileSecurity fileSecurity = File.GetAccessControl(path: file);
+            var fileSecurity = File.GetAccessControl(path: file);
             var rules = fileSecurity.GetAccessRules(includeExplicit: true, includeInherited: true, typeof(NTAccount)).OfType<FileSystemAccessRule>();                      
 
             foreach (FileSystemAccessRule rule in rules)
@@ -104,8 +104,7 @@ namespace Morningstar.Core.Foundation.FileOperations
         /// <returns>True if method completed appropriate stages, false if not.</returns>
         public override bool RemoveAllRules(string file, string account, FileSystemRights right)
         {
-
-            FileSecurity fileSecurity = File.GetAccessControl(path: file);
+            var fileSecurity = File.GetAccessControl(path: file);
             var rules = fileSecurity.GetAccessRules(includeExplicit: true, includeInherited: true, typeof(NTAccount)).OfType<FileSystemAccessRule>();
 
             foreach (FileSystemAccessRule rule in rules)

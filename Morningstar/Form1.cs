@@ -34,20 +34,17 @@ namespace Morningstar
             listbox_DotNetClasses.Items.Clear();
             listbox_DotNetStrings.Items.Clear();
 
-            var userfile = new UserFile();
-            var userfileproperties = new FileProperty();
-            var userfileattributes = new FileAttribute();
-            var userfilesystemaccessrights = new FileSystemAccess();
-            var assemblyclasses = new ClassNames();
-            var assemblystrings = new AssemblyString();
-           
+            var userFile = new UserFile();
+            var userFileProperties = new FileProperty();
+            var userFileAttributes = new FileAttribute();
+            var userFileSystemAccessRights = new FileSystemAccess();
+            var assemblyClasses = new ClassNames();
+            var assemblyStrings = new AssemblyString();        
+            var userFileAccessRule = new BindingSource();
+                       
 
-            BindingSource userfileaccessrule = new BindingSource();
-            
+            this.UserSelectedFile = await userFile.Load();
 
-            string selectedfile = string.Empty;           
-            selectedfile = await userfile.Load();
-            this.UserSelectedFile = selectedfile;
 
             //  Load .NET classes.
 
@@ -55,14 +52,14 @@ namespace Morningstar
             {
                 await Task.Run(() =>
                 {
-                    assemblyclasses.ReadAll(filename: UserSelectedFile);
+                    assemblyClasses.ReadAll(filename: UserSelectedFile);
 
-                    foreach (var item in assemblyclasses.AssemblyClasses)
+                    foreach (var item in assemblyClasses.AssemblyClasses)
                     {
                         BackgroundWork.ControlInvoke(listbox_DotNetClasses, () => listbox_DotNetClasses.Items.Add(item));
                     }
 
-                    assemblyclasses.AssemblyClasses = null;
+                    assemblyClasses.AssemblyClasses = null;
                 });
             }
 
@@ -72,54 +69,52 @@ namespace Morningstar
             {
                 await Task.Run(() =>
                 {
-                    assemblystrings.ReadAll(filename: UserSelectedFile);
+                    assemblyStrings.ReadAll(filename: UserSelectedFile);
 
-                    foreach (var item in assemblystrings.Strings)
+                    foreach (var item in assemblyStrings.Strings)
                     {
                         BackgroundWork.ControlInvoke(listbox_DotNetStrings, () => listbox_DotNetStrings.Items.Add(item));                        
                     }
 
-                    assemblystrings.Strings = null;
+                    assemblyStrings.Strings = null;
                 });
             }
            
 
-            if (!string.IsNullOrWhiteSpace(selectedfile))
+            if (!string.IsNullOrWhiteSpace(this.UserSelectedFile))
             {
-                await userfileproperties.LoadProperties(file: selectedfile);
+                await userFileProperties.LoadProperties(file: this.UserSelectedFile);
 
                 // Load file properties.
 
-                label_FilePropertiesName.Text = userfileproperties.OriginalFileName;
-                label_FilePropertiesCreationDate.Text = userfileproperties.CreationDate;
-                label_FilePropertiesLastAccessed.Text = userfileproperties.AccessedDate;
-                label_FilePropertiesLastModified.Text = userfileproperties.ModifiedDate;
-                label_FilePropertiesOwner.Text = userfileproperties.Owner;
-                label_FilePropertiesSize.Text  = userfileproperties.Size;                
+                label_FilePropertiesName.Text = userFileProperties.OriginalFileName;
+                label_FilePropertiesCreationDate.Text = userFileProperties.CreationDate;
+                label_FilePropertiesLastAccessed.Text = userFileProperties.AccessedDate;
+                label_FilePropertiesLastModified.Text = userFileProperties.ModifiedDate;
+                label_FilePropertiesOwner.Text = userFileProperties.Owner;
+                label_FilePropertiesSize.Text  = userFileProperties.Size;                
 
-                await userfileattributes.LoadAttributes(file: selectedfile);
+                await userFileAttributes.LoadAttributes(file: this.UserSelectedFile);
 
                 // Load file attributes.
 
-                label_FileAttributeHidden.Text = userfileattributes.Hidden;
-                label_FileAttributeNormal.Text = userfileattributes.Normal;
-                label_FileAttributeSystem.Text = userfileattributes.System;
-                label_FileAttributeOffline.Text  = userfileattributes.Offline;
-                label_FileAttributeReadOnly.Text = userfileattributes.ReadOnly;                
-                label_FileAttributeEncrypted.Text = userfileattributes.Encrypted;
-                label_FileAttributeArchive.Text   = userfileattributes.Archive;
+                label_FileAttributeHidden.Text = userFileAttributes.Hidden;
+                label_FileAttributeNormal.Text = userFileAttributes.Normal;
+                label_FileAttributeSystem.Text = userFileAttributes.System;
+                label_FileAttributeOffline.Text  = userFileAttributes.Offline;
+                label_FileAttributeReadOnly.Text = userFileAttributes.ReadOnly;                
+                label_FileAttributeEncrypted.Text = userFileAttributes.Encrypted;
+                label_FileAttributeArchive.Text   = userFileAttributes.Archive;
 
-                await userfilesystemaccessrights.LoadAccessRights(file: selectedfile);
+                await userFileSystemAccessRights.LoadAccessRights(file: this.UserSelectedFile);
 
                 // Load permissions access rights.
 
                 await Task.Run(() => 
                 {
-                    userfileaccessrule.DataSource = userfilesystemaccessrights.SecurityAttributes;
-                    combobox_FilesystemAccessControlList.DataSource = userfileaccessrule;
-                });
-
-                //  userfileaccessrule.Dispose();
+                    userFileAccessRule.DataSource = userFileSystemAccessRights.SecurityAttributes;
+                    combobox_FilesystemAccessControlList.DataSource = userFileAccessRule;
+                });                
             }
 
             if (!string.IsNullOrWhiteSpace(this.UserSelectedFile))

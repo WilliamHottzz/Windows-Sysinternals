@@ -10,7 +10,7 @@ namespace Morningstar.Core.Foundation.ProcessOperations
 {
     public abstract class ProcessStartInformation
     {
-        public int ProcessId;
+        public int ProcessId { get; set; }
         public string ProcessName { get; set; }
         public bool CreateWindow { get; set; }
     }
@@ -33,23 +33,25 @@ namespace Morningstar.Core.Foundation.ProcessOperations
             bool completed = false;
             int completionstatus = -1;
 
-            Process userstartedprocess = new Process();
-            userstartedprocess.StartInfo.FileName = file;
-            userstartedprocess.StartInfo.CreateNoWindow = false;
-            userstartedprocess.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
-            userstartedprocess.Start();            
+            var userStartedProcess = new Process();
+            userStartedProcess.StartInfo.FileName = file;
+            userStartedProcess.StartInfo.CreateNoWindow = false;
+            userStartedProcess.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
+            userStartedProcess.Start();            
 
             //  fill
             
-            completed = await SetProcessInformation(id: userstartedprocess.Id, name: userstartedprocess.ProcessName, createwindow: false);
-            completionstatus = (completed == true) ? 1 : 0;
+            completed = await SetProcessInformation(id: userStartedProcess.Id, name: userStartedProcess.ProcessName, createwindow: false);
+            completionstatus = completed == true ? 1 : 0;
 
             if (completionstatus == 1)
             {
                 MessageBox.Show(ProcessId.ToString() + " " + ProcessName);
-                return userstartedprocess.Id;
+                userStartedProcess.Dispose();
+                return userStartedProcess.Id;
             }
-            
+
+            userStartedProcess.Dispose();
             return completionstatus;
         }
     }
