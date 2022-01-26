@@ -27,10 +27,12 @@ namespace Morningstar
         /// <summary>
         /// For when process operations start, process PID is kept here.
         /// </summary>
+        [Required]
         private int UserStartedProcessPid = -1;
 
 
         FailedProcessOperations failedProcessResponse = new FailedProcessOperations();
+
 
 
     private async void GetDotNetAssemblyStrings()
@@ -75,70 +77,40 @@ namespace Morningstar
         }
 
 
-        private async void menustrip_OpenFile_Click(object sender, EventArgs e)
+        private void ReloadProcessModuleList()
         {
-            listbox_DotNetClasses.Items.Clear();
-            listbox_DotNetStrings.Items.Clear();
+            Modules processModules = new Modules();
+            ListViewItem item = null;
+            string[] data = new string[3];
+            string[] splitter = null;
 
-            var userFile = new UserFile();
-            var userFileProperties = new FileProperty();
-            var userFileAttributes = new FileAttribute();
-            var userFileSystemAccessRights = new FileSystemAccess();                   
-            var userFileAccessRule = new BindingSource();
-                       
-
-            this.UserSelectedFile = await userFile.Load();
-
-
-            //  Load .NET classes.
-            await Task.Run(() => { GetDotNetAssemblyClasses(); });
-            //  Load .NET strings.
-            await Task.Run(() => { GetDotNetAssemblyStrings(); });
-
-            
-
-
-            if (!string.IsNullOrWhiteSpace(this.UserSelectedFile))
+            if (!processModules.Read32(pid: UserStartedProcessPid))
             {
-                await userFileProperties.LoadProperties(file: this.UserSelectedFile);
-
-                // Load file properties.
-
-                label_FilePropertiesName.Text = userFileProperties.OriginalFileName;
-                label_FilePropertiesCreationDate.Text = userFileProperties.CreationDate;
-                label_FilePropertiesLastAccessed.Text = userFileProperties.AccessedDate;
-                label_FilePropertiesLastModified.Text = userFileProperties.ModifiedDate;
-                label_FilePropertiesOwner.Text = userFileProperties.Owner;
-                label_FilePropertiesSize.Text  = userFileProperties.Size;                
-
-                await userFileAttributes.LoadAttributes(file: this.UserSelectedFile);
-
-                // Load file attributes.
-
-                label_FileAttributeHidden.Text = userFileAttributes.Hidden;
-                label_FileAttributeNormal.Text = userFileAttributes.Normal;
-                label_FileAttributeSystem.Text = userFileAttributes.System;
-                label_FileAttributeOffline.Text  = userFileAttributes.Offline;
-                label_FileAttributeReadOnly.Text = userFileAttributes.ReadOnly;                
-                label_FileAttributeEncrypted.Text = userFileAttributes.Encrypted;
-                label_FileAttributeArchive.Text   = userFileAttributes.Archive;
-
-                await userFileSystemAccessRights.LoadAccessRights(file: this.UserSelectedFile);
-
-                // Load permissions access rights.
-
-                await Task.Run(() => 
-                {
-                    userFileAccessRule.DataSource = userFileSystemAccessRights.SecurityAttributes;
-                    combobox_FilesystemAccessControlList.DataSource = userFileAccessRule;
-                });                
+                MessageBox.Show(text: failedProcessResponse.FailedLoadingProcessModules);
+                return;
             }
 
-            if (!string.IsNullOrWhiteSpace(this.UserSelectedFile))
+            listView1.Items.Clear();
+
+            foreach (var module in processModules.ModuleNames)
             {
-                menuitem_RunUserFile.Enabled = true;
-            }           
+                splitter = module.Split(',');
+
+                data[0] = splitter[0];
+                data[1] = splitter[1];
+                data[2] = splitter[2];
+
+                item = new ListViewItem(data);
+
+                listView1.BeginUpdate();
+                listView1.Items.Add(item);
+                listView1.EndUpdate();
+            }
+
+            processModules.ModuleNames = null;
+            return;
         }
+
 
         /*
         private void button_RemoveFileSystemPermission_Click(object sender, EventArgs e)
@@ -176,6 +148,7 @@ namespace Morningstar
         }
         */
 
+
         private void button_RemoveAllFileSystemPermission_Click(object sender, EventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(this.UserSelectedFile))
@@ -210,23 +183,6 @@ namespace Morningstar
             }            
         }
         
-        private async void menuitem_RunUserFile_Click(object sender, EventArgs e)
-        {
-            var startprocess = new ProcessEnviroment();
-            int result = await startprocess.StartProcess(this.UserSelectedFile);
-            UserStartedProcessPid = result;
-
-            if (result == -1)
-            {
-                MessageBox.Show(failedProcessResponse.FailedStartingProcess);
-                return;
-            }
-
-            menuitem_TerminateUserProcess.Enabled = true;
-            menuitem_RunUserFile.Enabled = false;
-        }
-
-        
 
         private async void menustrip_OpenFile_Click_1(object sender, EventArgs e)
         {
@@ -239,16 +195,12 @@ namespace Morningstar
             var userFileSystemAccessRights = new FileSystemAccess();
             var userFileAccessRule = new BindingSource();
 
-
             this.UserSelectedFile = await userFile.Load();
-
 
             //  Load .NET classes.
             await Task.Run(() => { GetDotNetAssemblyClasses(); });
             //  Load .NET strings.
             await Task.Run(() => { GetDotNetAssemblyStrings(); });
-
-
 
 
             if (!string.IsNullOrWhiteSpace(this.UserSelectedFile))
@@ -287,18 +239,12 @@ namespace Morningstar
                 });
 
                 toolstrip_SelectedFile.Text = this.UserSelectedFile;
-            }
-
-            //if (string.IsNullOrWhiteSpace(this.UserSelectedFile))
-            //{
-               // menuitem_RunUserFile.Enabled = false;
-            //}
+            }            
         }
 
-        private async void menuitem_RunUserFile_Click_1(object sender, EventArgs e)
-        {
-            Modules processModules = new Modules();
 
+        private async void menuitem_RunUserFile_Click_1(object sender, EventArgs e)
+        {          
             var startprocess = new ProcessEnviroment();
             int result = -1;
 
@@ -310,12 +256,8 @@ namespace Morningstar
             {
                 MessageBox.Show("No selected file available!");
                 return;
-            }
+            }            
             
-            ListViewItem item = null;
-            string[] data = new string[3];
-
-
             this.UserStartedProcessPid = result;
 
             if (result == -1)
@@ -324,35 +266,14 @@ namespace Morningstar
                 return;
             }
 
+            toolstrip_ProcessId.Text = this.UserStartedProcessPid.ToString();
+
             menuitem_TerminateUserProcess.Enabled = true;
             menuitem_RunUserFile.Enabled = false;
 
-            listView1.Items.Clear();
-
-            if (!processModules.Read32(UserStartedProcessPid))
-            {
-                MessageBox.Show(failedProcessResponse.FailedLoadingProcessModules);
-                return;
-            }          
-
-            foreach(var module in processModules.ModuleNames)
-            {
-                string[] splitter = module.Split(',');
-
-                data[0] = splitter[0];
-                data[1] = splitter[1];
-                data[2] = splitter[2];
-
-                item = new ListViewItem(data);
-
-                listView1.BeginUpdate();
-                listView1.Items.Add(item);
-                listView1.EndUpdate();
-            }
-
-            toolstrip_ProcessId.Text = this.UserStartedProcessPid.ToString();
-            processModules.ModuleNames = null;
+            ReloadProcessModuleList();
         }
+
 
         private void MainForm_Load_1(object sender, EventArgs e)
         {
@@ -364,8 +285,8 @@ namespace Morningstar
             listView1.Columns.Add("Entry Address", 125);
             listView1.Columns.Add("Base Address", 70);
             listView1.Columns.Add("Name", 100);
-            
         }
+
 
         private void menuitem_TerminateUserProcess_Click(object sender, EventArgs e)
         {
@@ -396,12 +317,12 @@ namespace Morningstar
                 MessageBox.Show(failedProcessResponse.FailedProcessIdNotFound);
             }
 
-
             this.UserStartedProcessPid = -1;
 
             menuitem_TerminateUserProcess.Enabled = false;
             menuitem_RunUserFile.Enabled = true;
         }
+
 
         private void menuitem_TerminateUserProcess_EnabledChanged(object sender, EventArgs e)
         {
@@ -411,6 +332,7 @@ namespace Morningstar
             }
         }
 
+
         private void toolstrip_SelectedFile_TextChanged(object sender, EventArgs e)
         {
             if(toolstrip_SelectedFile.Text != "-")
@@ -419,40 +341,15 @@ namespace Morningstar
             }
         }
 
+
         private void btn_ReloadModules_Click(object sender, EventArgs e)
         {
-            Modules processModules = new Modules();
-            ListViewItem item = null;
-            string[] data = new string[3];
-
-
-            if (!processModules.Read32(UserStartedProcessPid))
-            {
-                MessageBox.Show(failedProcessResponse.FailedLoadingProcessModules);
-                return;
-            }
-
-            listView1.Items.Clear();
-
-            foreach (var module in processModules.ModuleNames)
-            {
-                string[] splitter = module.Split(',');
-
-                data[0] = splitter[0];
-                data[1] = splitter[1];
-                data[2] = splitter[2];
-
-                item = new ListViewItem(data);
-
-                listView1.BeginUpdate();
-                listView1.Items.Add(item);
-                listView1.EndUpdate();
-            }
-
-            processModules.ModuleNames = null;
+            ReloadProcessModuleList();
         }
     }
 }
+
+
 
     class BackgroundWork
     {
